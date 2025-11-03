@@ -12,3 +12,7 @@ file = args.filename
 
 mypose = pose_from_pdb(file) # load pose
 print(f"Loaded pose with {mypose.total_residue()} residues from: {args.filename}")
+sxfn = get_score_function()
+score = sxfn.score(mypose)
+print('"""""""""""""""""""')
+print(score)
