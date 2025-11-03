@@ -19,7 +19,8 @@ sxfn = get_score_function()
 score = sxfn.score(mypose)
 print('++++++++++++++++++++++++++++++++++')
 print(score)
-the_observer = moves.AddPyMOLObserver(mypose, keep_history=True, update_interval=0)
+
+the_observer = moves.AddPyMOLObserver(mypose)
 the_observer.pymol().apply(mypose)
 
 N_residues = mypose.total_residue()
@@ -33,7 +34,7 @@ movemap.set_chi(True)
 min_opts = core.optimization.MinimizerOptions("lbfgs_armijo_atol", 0.01, True)
 minimizer = core.optimization.AtomTreeMinimizer()
 
-for i in range(2):
+for i in range(1):
     # Perturb phi and psi
     rand_residue = random.uniform()
     rand_residue = int(rand_residue * N_residues +1)
@@ -54,4 +55,5 @@ for i in range(2):
     mc.boltzmann(mypose)
     
 print(f"Score: {sxfn.score(mypose)}")
+print(f"Score of lowest scoirng pose: {sxfn.score(mc.lowest_score_pose())}")
 mypose.dump_pdb("Output.pdb")
