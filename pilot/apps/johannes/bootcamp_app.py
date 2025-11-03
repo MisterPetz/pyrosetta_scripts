@@ -8,4 +8,7 @@ parser = argparse.ArgumentParser()
 #add line here to add an argument
 parser.add_argument('filename')
 args = parser.parse_args()
-print(args.filename)
+file = args.filename
+
+mypose = pose_from_pdb(file) # load pose
+print(f"Loaded pose with {mypose.total_residue()} residues from: {args.filename}")
