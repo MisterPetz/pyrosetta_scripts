@@ -8,7 +8,7 @@ def test_first():
 def test_enqueue():
     new_q = queue.Queue()
     start_lenght = len(new_q)
-    new_q.enqueue(1)
+    new_q.enqueue(None)
     assert start_lenght < len(new_q)
     
 def test_empty():
@@ -49,3 +49,11 @@ def test_heavy_extend():
         if i % 2 == 0:
             new_q.dequeue()
     assert len(new_q) == 50 / 2
+
+def test_forbid_access():
+    new_q = queue.Queue()
+    with pytest.raises(IndexError):
+        for i in range(50):
+            new_q.enqueue(i)
+            new_q._items.pop()
+            new_q.dequeue()
