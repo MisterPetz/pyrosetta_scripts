@@ -57,3 +57,15 @@ def test_forbid_access():
             new_q.enqueue(i)
             new_q._items.pop()
             new_q.dequeue()
+    
+def test_new_enqueue():
+    new_q = queue.Queue()
+    new_q.enqueue(None)
+    new_q.enqueue("Hello")
+    new_q.enqueue(1)
+    new_q.enqueue(new_q)
+    new_q.enqueue(True)
+    print(new_q) #print breaks queue, why?
+    for i in range(len(new_q)):
+        new_q.dequeue()
+    assert new_q.size() == 0
