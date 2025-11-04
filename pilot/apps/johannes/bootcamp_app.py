@@ -20,8 +20,8 @@ score = sxfn.score(mypose)
 print('++++++++++++++++++++++++++++++++++')
 print(score)
 
-the_observer = moves.AddPyMOLObserver(mypose)
-the_observer.pymol().apply(mypose)
+#the_observer = moves.AddPyMOLObserver(mypose)
+#the_observer.pymol().apply(mypose)
 
 N_residues = mypose.total_residue()
 mc = moves.MonteCarlo(mypose, sxfn, 1.0)
@@ -34,7 +34,11 @@ movemap.set_chi(True)
 min_opts = core.optimization.MinimizerOptions("lbfgs_armijo_atol", 0.01, True)
 minimizer = core.optimization.AtomTreeMinimizer()
 
-for i in range(1):
+accepted = 0
+itterations = 35
+sum_score = 0
+
+for i in range(itterations):
     # Perturb phi and psi
     rand_residue = random.uniform()
     rand_residue = int(rand_residue * N_residues +1)
@@ -44,16 +48,35 @@ for i in range(1):
     orig_psi = mypose.psi(rand_residue)
     mypose.set_phi(rand_residue, orig_phi + phi_pert)
     mypose.set_psi(rand_residue, orig_psi + psi_pert)
+    
     #add packing and minimization calls to 
     tf = core.pack.task.TaskFactory()
     task = tf.create_task_and_apply_taskoperations(mypose)
     task.restrict_to_repacking()
     core.pack.pack_rotamers(mypose, sxfn, task)
-    
 
     minimizer.run(mypose, movemap, sxfn, min_opts)
     mc.boltzmann(mypose)
     
+    sum_score += mypose.energies().total_energy()
+    
+    if mc.mc_accepted_string().startswith("accepted"):
+        accepted +=1
+
+acceptance_rate = accepted/itterations
+avg_score = sum_score/itterations
+
+print(f"Acceptance rate: {acceptance_rate}")
+print(f" Average score: {avg_score}")
+
 print(f"Score: {sxfn.score(mypose)}")
 print(f"Score of lowest scoirng pose: {sxfn.score(mc.lowest_score_pose())}")
-mypose.dump_pdb("Output.pdb")
+#mypose.dump_pdb("Output.pdb")
+
+
+"""
+Acceptance rate: 0.6285714285714286
+Average score: -245.06445169069838
+Score: -247.56247117578533
+Score of lowest scoirng pose: -247.56247117578533
+"""
