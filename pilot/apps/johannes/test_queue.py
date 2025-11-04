@@ -1,3 +1,51 @@
+import queue
+import pytest
+
 def test_first():
     print("Running my first unit tests!")
     assert True
+    
+def test_enqueue():
+    new_q = queue.Queue()
+    start_lenght = len(new_q)
+    new_q.enqueue(1)
+    assert start_lenght < len(new_q)
+    
+def test_empty():
+    new_q = queue.Queue()
+    assert new_q.is_empty()
+    assert len(new_q) == 0
+
+def test_en_dequeue():
+    new_q = queue.Queue()
+    new_q.enqueue("first_in")
+    new_q.enqueue("second_in")
+    assert new_q.dequeue() == "first_in"
+    assert new_q.dequeue() == "second_in"
+    
+def test_size():
+    new_q = queue.Queue()
+    new_q.enqueue("first_in")
+    new_q.enqueue("second_in")
+    assert new_q.size() == 2
+    new_q.dequeue()
+    assert new_q.size() == 1
+    
+def test_repr():
+    new_q = queue.Queue()
+    new_q.enqueue("first_in")
+    new_q.enqueue("second_in")
+    assert repr(new_q) == "Queue(['first_in', 'second_in'])"
+    
+def test_raise_empty():
+    new_q = queue.Queue()
+    with pytest.raises(IndexError):
+        new_q.dequeue()
+
+def test_heavy_extend():
+    new_q = queue.Queue()
+    for i in range(50):
+        new_q.enqueue(i)
+        if i % 2 == 0:
+            new_q.dequeue()
+    assert len(new_q) == 50 / 2
