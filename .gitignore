@@ -3,3 +3,4 @@
 .DS_Store
 dask-worker-space/
 __pycache__/
+/pilot/apps/johannes/Output.pdb
