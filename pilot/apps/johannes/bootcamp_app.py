@@ -73,24 +73,27 @@ def main():
     mypose = pose_from_pdb(file) 
     print(f"Loaded pose with {mypose.total_residue()} residues from: {args.filename}")
     sxfn = get_score_function()
-    score = sxfn.score(mypose)
-    print('++++++++++++++++++++++++++++++++++')
-    print(score)
+    
+    # linear chainbreack score
+    sxfn.set_weight(core.scoring.linear_chainbreak,1.0)
 
-    #the_observer = moves.AddPyMOLObserver(mypose)
-    #the_observer.pymol().apply(mypose)
+    the_observer = moves.AddPyMOLObserver(mypose)
+    the_observer.pymol().apply(mypose)
     
     #instantiate fold tree
     fold_tree = fold_tree_from_ss(mypose)
     assert fold_tree.check_fold_tree(), "FoldTree is invalid"
-    # Some builds encode N; if present, sanity check against pose size
-    try:
-        assert fold_tree.nres() == mypose.total_residue()
-    except AttributeError:
-        pass  # not all builds expose nres()
 
     mypose.fold_tree(fold_tree)
-    
+    cutpoints = [i for i in range(1, mypose.size()) if fold_tree.is_cutpoint(i)]
+
+    for k in cutpoints:
+        core.pose.correctly_add_cutpoint_variants(mypose, k)
+
+    for k in cutpoints:
+        assert mypose.residue(k).has_variant_type(core.chemical.VariantType.CUTPOINT_LOWER)
+        assert mypose.residue(k+1).has_variant_type(core.chemical.VariantType.CUTPOINT_UPPER)
+        
     mc_loop(pose=mypose, sxfn=sxfn)
     
 if __name__ == "__main__":
