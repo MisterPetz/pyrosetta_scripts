@@ -45,32 +45,55 @@ def fold_tree_from_dssp_string(ss):
     jump_targets_sorted = sorted(jump_targets, key=lambda x: abs(x - root))
     jump_edges = [(root, mid, i) for i, mid in enumerate(jump_targets_sorted, start=1)]
 
-    # normal edges
-    normal_edges = []
 
-    # For each segment, connect its middle to its left and right boundaries
+    segment_edges = []
+    loop_edges = []
+
+    # --- upper loop: segments ---
     for i, ((start, end), middle) in enumerate(zip(segments, sec_middles)):
-        
-        # Nterm start
         left = 1 if i == 0 else start
         right = len(ss) if i == len(segments) - 1 else end
-                # Ctermn end
 
-        normal_edges.append((middle, left, -1))
-        normal_edges.append((middle, right, -1))
+        segment_edges.append((middle, left, -1))
+        segment_edges.append((middle, right, -1))
 
-    # For each loop, connect its middle to the start and end of the loop
+    # --- lower loop: loops ---
     for (start, end), middle in zip(loop_spans, loop_middles):
-        normal_edges.append((middle, start, -1))
-        normal_edges.append((middle, end, -1))
+        loop_edges.append((middle, start, -1))
+        loop_edges.append((middle, end, -1))
 
-    all_edges = jump_edges + normal_edges
+    # --- combine alternating two by two ---
+    combined_edges = []
+    seg_i = loop_i = 0
+
+    while seg_i < len(segment_edges) or loop_i < len(loop_edges):
+        # take two from segment_edges
+        for _ in range(2):
+            if seg_i < len(segment_edges):
+                combined_edges.append(segment_edges[seg_i])
+                seg_i += 1
+        # take two from loop_edges
+        for _ in range(2):
+            if loop_i < len(loop_edges):
+                combined_edges.append(loop_edges[loop_i])
+                loop_i += 1
+
+    all_edges = jump_edges + combined_edges
     all_edges.sort(key=lambda x: (x[0], x[1], x[2]))
 
-    # add to FoldTree
-    for start, end,  label in all_edges:
-        ft.add_edge(start, end, label)
+    normal_i = jump_i = 0
+    for i in range(len(all_edges)):
+        # Pattern repeats every 3 edges: [normal, normal, jump]
+        pattern_pos = i % 3
 
+        if pattern_pos in (0, 1):  # two normal edges
+            start, end, label = combined_edges[normal_i]
+            normal_i += 1
+        else:  # one jump edge
+            start, end, label = jump_edges[jump_i]
+            jump_i += 1
+
+        ft.add_edge(start, end, label)
 
     return ft
 
@@ -85,7 +108,7 @@ def identify_secondary_structure_spans(input_string: str) -> list:
         if ch in ('H', 'E'):
             start = i + 1
             i += 1
-            while i < n and input_string[i] == ch:
+            while i < n and input_string[i] in ('H', 'E'):
                 i += 1
             result.append((start, i))
         else:
