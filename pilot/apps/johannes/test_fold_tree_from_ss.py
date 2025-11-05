@@ -1,5 +1,7 @@
 import pytest
 
+from bootcamp_protocol import fold_tree_from_dssp_string
+
 def identify_secondary_structure_spans(input_string: str) -> list:
     result: list = []
     i = 0
@@ -39,3 +41,6 @@ expected3 = [(1, 9), (11, 18), (20, 28), (30, 30), (32, 36), (38, 38), (40, 40),
 )
 def test_identify_secondary_structure_spans(input_string, expected):
     assert identify_secondary_structure_spans(input_string) == expected
+
+
+
