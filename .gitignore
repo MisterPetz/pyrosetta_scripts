@@ -4,3 +4,5 @@
 dask-worker-space/
 __pycache__/
 /pilot/apps/johannes/Output.pdb
+/pilot/apps/johannes/priv_runs
+/pilot/apps/johannes/help.py
