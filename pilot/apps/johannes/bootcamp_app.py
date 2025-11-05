@@ -61,43 +61,43 @@ def mc_loop(pose, sxfn):
     
 
 
-def main():
+def main(file, custom_run = False):
     init(extra_options="-ignore_unrecognized_res")
-
-    parser = argparse.ArgumentParser()
-    #add line here to add an argument
-    parser.add_argument('filename')
-    args = parser.parse_args()
-    file = args.filename
 
     mypose = pose_from_pdb(file) 
     print(f"Loaded pose with {mypose.total_residue()} residues from: {args.filename}")
     sxfn = get_score_function()
     
-    # linear chainbreack score
-    sxfn.set_weight(core.scoring.linear_chainbreak,1.0)
 
     the_observer = moves.AddPyMOLObserver(mypose)
     the_observer.pymol().apply(mypose)
     
-    #instantiate fold tree
-    fold_tree = fold_tree_from_ss(mypose)
-    assert fold_tree.check_fold_tree(), "FoldTree is invalid"
+    if custom_run:    
+        sxfn.set_weight(core.scoring.linear_chainbreak,1.0)
+        #instantiate fold tree
+        fold_tree = fold_tree_from_ss(mypose)
+        assert fold_tree.check_fold_tree(), "FoldTree is invalid"
 
-    mypose.fold_tree(fold_tree)
-    cutpoints = [i for i in range(1, mypose.size()) if fold_tree.is_cutpoint(i)]
+        mypose.fold_tree(fold_tree)
+        cutpoints = [i for i in range(1, mypose.size()) if fold_tree.is_cutpoint(i)]
 
-    for k in cutpoints:
-        core.pose.correctly_add_cutpoint_variants(mypose, k)
+        for k in cutpoints:
+            core.pose.correctly_add_cutpoint_variants(mypose, k)
 
-    for k in cutpoints:
-        assert mypose.residue(k).has_variant_type(core.chemical.VariantType.CUTPOINT_LOWER)
-        assert mypose.residue(k+1).has_variant_type(core.chemical.VariantType.CUTPOINT_UPPER)
+        for k in cutpoints:
+            assert mypose.residue(k).has_variant_type(core.chemical.VariantType.CUTPOINT_LOWER)
+            assert mypose.residue(k+1).has_variant_type(core.chemical.VariantType.CUTPOINT_UPPER)
         
     mc_loop(pose=mypose, sxfn=sxfn)
     
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    #add line here to add an argument
+    parser.add_argument('filename')
+    args = parser.parse_args()
+    file = args.filename
+    
+    main(file, True)
 #mypose.dump_pdb("Output.pdb")
 
 
@@ -106,4 +106,10 @@ Acceptance rate: 0.6285714285714286
 Average score: -245.06445169069838
 Score: -247.56247117578533
 Score of lowest scoirng pose: -247.56247117578533
+
+RUN  WITH custom foldTree
+Acceptance rate: 0.7714285714285715
+Average score: -234.21816153559266
+Score: -235.7002155405839
+Score of lowest scoirng pose: -235.70732093385467
 """
