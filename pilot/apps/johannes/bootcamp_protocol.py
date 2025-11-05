@@ -4,18 +4,6 @@ from pyrosetta.rosetta.core.scoring.dssp import Dssp
 
 import argparse
 
-if __name__ == "__main__":
-    init(extra_options="-ignore_unrecognized_res")
-
-    parser = argparse.ArgumentParser()
-    #add line here to add an argument
-    parser.add_argument('filename')
-    args = parser.parse_args()
-    file = args.filename
-
-    mypose = pose_from_pdb(file) 
-
-
 def fold_tree_from_ss(pose) -> FoldTree:
     dssp = Dssp(pose)
     secstruct = dssp.get_dssp_secstruct()
@@ -45,45 +33,47 @@ def fold_tree_from_dssp_string(ss):
         if loop_start <= loop_end:
             loop_spans.append((loop_start, loop_end))
 
+    # After the last range
+    end = segments[-1][1]
+
     sec_middles = get_middles(segments)
     loop_middles = get_middles(loop_spans)
 
     # jump edges
-    first_mid = sec_middles[0]
+    root = sec_middles[0]
     jump_targets = [mid for mid in sec_middles[1:]] + [mid for mid in loop_middles]
-    jump_targets_sorted = sorted(jump_targets, key=lambda x: abs(x - first_mid))
-    jump_edges = [(mid, first_mid, i) for i, mid in enumerate(jump_targets_sorted, start=1)]
+    jump_targets_sorted = sorted(jump_targets, key=lambda x: abs(x - root))
+    jump_edges = [(root, mid, i) for i, mid in enumerate(jump_targets_sorted, start=1)]
 
     # normal edges
     normal_edges = []
 
     # For each segment, connect its middle to its left and right boundaries
     for i, ((start, end), middle) in enumerate(zip(segments, sec_middles)):
-        # Left boundary: if it's the first segment, go to 1; otherwise to the segment's start
+        
+        # Nterm start
         left = 1 if i == 0 else start
-
-        # Right boundary: if it's the last segment, go to end of string; otherwise segment end
         right = len(ss) if i == len(segments) - 1 else end
+                # Ctermn end
 
-        # Add both connections (edges)
         normal_edges.append((middle, left, -1))
         normal_edges.append((middle, right, -1))
-
 
     # For each loop, connect its middle to the start and end of the loop
     for (start, end), middle in zip(loop_spans, loop_middles):
         normal_edges.append((middle, start, -1))
         normal_edges.append((middle, end, -1))
-    # sort
+
     all_edges = jump_edges + normal_edges
     all_edges.sort(key=lambda x: (x[0], x[1], x[2]))
 
     # add to FoldTree
-    for end, start, label in all_edges:
+    for start, end,  label in all_edges:
         ft.add_edge(start, end, label)
 
+
     return ft
-# forgot to implement end edge case, so from last middle to end of last thing!
+
 
 def identify_secondary_structure_spans(input_string: str) -> list:
     result: list = []
@@ -102,3 +92,18 @@ def identify_secondary_structure_spans(input_string: str) -> list:
             i += 1
 
     return result
+
+if __name__ == "__main__":
+    init(extra_options="-ignore_unrecognized_res")
+
+    parser = argparse.ArgumentParser()
+    #add line here to add an argument
+    parser.add_argument('filename')
+    args = parser.parse_args()
+    file = args.filename
+
+    mypose = pose_from_pdb(file)
+    ft = fold_tree_from_ss(pose=mypose)
+    print(dir(ft))
+    print(ft.size())
+

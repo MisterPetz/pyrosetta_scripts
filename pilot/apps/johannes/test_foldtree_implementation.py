@@ -3,7 +3,6 @@ import pytest
 from bootcamp_protocol import fold_tree_from_dssp_string
 
 
-
 def identify_secondary_structure_spans(input_string: str) -> list:
     # create fold tree
     ft = fold_tree_from_dssp_string(input_string)
@@ -16,10 +15,12 @@ def identify_secondary_structure_spans(input_string: str) -> list:
 
     
     return result
-        
+
+def test_tree_size():
+    ft = fold_tree_from_dssp_string(ss)
+    assert ft.size() == 38
+    
  
-
-
 ss = "   EEEEEEE    EEEEEEE         EEEEEEEEE    EEEEEEEEEE   HHHHHH         EEEEEEEEE         EEEEE     "
 
 EXPECTED_EDGES = [
