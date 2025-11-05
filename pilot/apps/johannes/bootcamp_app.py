@@ -1,6 +1,5 @@
 import sys
 import argparse
-import random
 from pyrosetta import *
 from pyrosetta.rosetta.numeric import random
 from pyrosetta.rosetta.protocols import moves
