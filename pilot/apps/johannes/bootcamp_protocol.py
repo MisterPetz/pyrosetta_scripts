@@ -152,30 +152,3 @@ def identify_secondary_structure_spans(input_string: str) -> list:
             i += 1
 
     return result
-test_string = "   EEEEEEE    EEEEEEE         EEEEEEEEE    EEEEEEEEEE   HHHHHH         EEEEEEEEE         EEEEE     "
-ft = fold_tree_from_dssp_string(test_string)
-a = ft.to_string()
-print(a)
-root_num = ft.root()
-test = []
-EXPECTED_EDGES = [
-    (1, 7),   (10, 7),  (12, 7),  (11, 12),
-    (14, 12), (18, 7),  (15, 18), (21, 18),
-    (26, 7),  (22, 26), (30, 26), (35, 7),
-    (31, 35), (39, 35), (41, 7),  (40, 41),
-    (43, 41), (48, 7),  (44, 48), (53, 48),
-    (55, 7),  (54, 55), (56, 55), (59, 7),
-    (57, 59), (62, 59), (67, 7),  (63, 67),
-    (71, 67), (76, 7),  (72, 76), (80, 76),
-    (85, 7),  (81, 85), (89, 85), (92, 7),
-    (90, 92), (99, 92),
-]
-parts = a.split("EDGE")[1:]
-
-
-# for each part, take the next 3 numbers and convert to int
-edges = [list(map(int, p.split()[:3])) for p in parts]
-result = [[i[0], i[1]] for i in edges]
-for i in range(len(result)):
-    print(f"test:{EXPECTED_EDGES[i]}")
-    print(f"actual:{result[i]}")
