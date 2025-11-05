@@ -2,20 +2,34 @@ from pyrosetta import *
 from abc import ABC, abstractmethod
 import sys
 import argparse
-from pyrosetta import *
 from pyrosetta.rosetta.numeric import random
 from pyrosetta.rosetta.protocols import moves
 from pyrosetta.rosetta import core
 from bootcamp_protocol import fold_tree_from_ss
 
 class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
-    def __init__(self):
+    def __init__(self, score_function, num_iterations):
         super().__init__(self) 
+        self._sxfn = score_function
+        self._num_itterations = num_iterations
+    
+    def get_num_itterations(self):
+        return self._num_itterations#
+    
+    def set_num_itterations(self, num_itterations):
+        self._num_itterations = num_itterations
+
+    def set_sxfn(self, sxfn):
+        self._sxfn = sxfn
+        
+    def get_sxfn(self):
+        return self._sxfn
         
     @abstractmethod
     def apply(self, pose):
 
-        sxfn = get_score_function()
+        sxfn = self._sxfn
+        # are these still needed?
         sxfn.set_weight(core.scoring.linear_chainbreak,1.0)
         #instantiate fold tree
         fold_tree = fold_tree_from_ss(pose)
@@ -43,7 +57,7 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
         minimizer = core.optimization.AtomTreeMinimizer()
 
         accepted = 0
-        itterations = 35
+        itterations = self._num_itterations
         sum_score = 0
 
         for i in range(itterations):
@@ -82,5 +96,10 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
             
     @abstractmethod
     def get_name(self):
+        return self.__class__.__name__
+    
+    def provide_xml_shema(self):
+        return
+    def mover_name(self):
         return self.__class__.__name__
         
