@@ -29,57 +29,7 @@ def get_middles(elements_list):
         mid = (a + b)//2
         sec_segments_middles.append(mid)
     return sec_segments_middles
-"""
-    
-def fold_tree_from_dssp_string(ss: str) -> FoldTree:
-    ft = FoldTree()
-    segments = identify_secondary_structure_spans(ss)
-    
-    # Compute loop spans between SSEs as inclusive ranges
-    loop_spans: list[tuple[int, int]] = []
-    for i in range(len(segments) - 1):
-        left_end = segments[i][1]
-        right_start = segments[i + 1][0]
-        loop_start = left_end + 1
-        loop_end = right_start - 1
-        if loop_start <= loop_end:
-            loop_spans.append((loop_start, loop_end))
-    
-    loop_middles = get_middles(loop_spans)
-    sec_middles = get_middles(segments)
-    
-    
 
-    #now create tree, first segment to middle of every other segmetn
-    # could i get the jump connections and the segment connections and later combine them to add
-    seq_list = [] # creates a list of ((start, end) middle), for segments
-    
-    for i in range(len(segments)):
-        seq_list.append((segments[i], sec_middles[i]))
-    
-    
-    
-    loop_list = [] #creates a list of ((start, end) middle) for loop segment
-    
-    for i in range(len(loop_spans)):
-        loop_list.append((loop_spans[i], loop_middles[i]))
-        
-    jump_edges = []
-
-    first_mid = seq_list[0][1]  # 4
-
-    # connect first_mid to every mid in seq_list_1 after the first
-    for (_, mid) in seq_list[1:]:
-        jump_edges.append((mid, first_mid, -1))
-
-    # connect first_mid to every mid in seq_list_2
-    for (_, mid) in loop_list:
-        jump_edges.append((mid, first_mid, -1))
-
-    print(jump_edges)
-    
-    #now we need to create the jumps for loop in betweens. 
-"""
 
 def fold_tree_from_dssp_string(ss):
     ft = FoldTree()
