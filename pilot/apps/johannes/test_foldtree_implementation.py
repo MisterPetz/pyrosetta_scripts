@@ -1,6 +1,8 @@
 import pytest
 
 from bootcamp_protocol import fold_tree_from_dssp_string
+from pyrosetta import *
+from pyrosetta.rosetta.core.scoring.dssp import Dssp
 
 
 def identify_secondary_structure_spans(input_string: str) -> list:
@@ -8,13 +10,19 @@ def identify_secondary_structure_spans(input_string: str) -> list:
     ft = fold_tree_from_dssp_string(input_string)
     parts = ft.to_string().split("EDGE")[1:]
 
-
     # for each part, take the next 3 numbers and convert to int
     edges = [list(map(int, p.split()[:3])) for p in parts]
     result = [(i[0], i[1]) for i in edges]
-
     
     return result
+
+def test_foldtree():
+    init(extra_options="-ignore_unrecognized_res")
+    pose = pose_from_pdb("test_in.pdb")
+    dssp = Dssp(pose)
+    sec_struct = dssp.get_dssp_secstruct()
+    fold_tree = fold_tree_from_dssp_string(sec_struct)
+    pose.fold_tree(fold_tree)
 
 def test_tree_size():
     ft = fold_tree_from_dssp_string(ss)
