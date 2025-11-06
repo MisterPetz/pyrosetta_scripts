@@ -122,7 +122,7 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
         print(f"Average score: {avg_score}")
 
         print(f"Score: {sfxn.score(pose)}")
-        print(f"Score of lowest scoirng pose: {sfxn.score(mc.lowest_score_pose())}")
+        print(f"Score of lowest scoring pose: {sfxn.score(mc.lowest_score_pose())}")
     
     
     def provide_xml_schema(xsd):

@@ -78,6 +78,7 @@ def main(file, custom_run = False):
         assert fold_tree.check_fold_tree(), "FoldTree is invalid"
 
         mypose.fold_tree(fold_tree)
+
         cutpoints = [i for i in range(1, mypose.size()) if fold_tree.is_cutpoint(i)]
 
         for k in cutpoints:
