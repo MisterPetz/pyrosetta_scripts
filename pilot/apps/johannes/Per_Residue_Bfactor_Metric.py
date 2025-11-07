@@ -1,5 +1,7 @@
 from pyrosetta import *
 from pyrosetta.rosetta import core, std
+from pyrosetta.rosetta.core import select
+from pyrosetta.rosetta.std import map_unsigned_long_double
 
 class PerResidueBfactorBootCampMetric(rosetta.core.simple_metrics.PerResidueRealMetric):
     _clones = list()
@@ -46,6 +48,21 @@ class PerResidueBfactorBootCampMetric(rosetta.core.simple_metrics.PerResidueReal
                 cls.class_name(),
                 description, attrlist)
         
-    def calculate(self, pose)
+    def calculate(self, pose):
+        residue_selector = self.get_selector()
+        subset = residue_selector.apply(pose)
+        selection = select.get_residues_from_subset(subset)
+
+        pdb_info = pose.pdb_info()
+
+        b_fact_map = map_unsigned_long_double()
+        
+        for resi in selection:
+           rt = pose.residue_type(resi)
+           if rt.has(self.atom_type_):
+
+               atom_idx = rt.atom_index(self.atom_type_)
+               b_fact_map[ int(resi) ] = float(pdb_info.bfactor(resi, atom_idx))
+        return b_fact_map
 
 
