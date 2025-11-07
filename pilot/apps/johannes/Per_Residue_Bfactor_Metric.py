@@ -5,17 +5,16 @@ from pyrosetta.rosetta.std import map_unsigned_long_double
 
 class PerResidueBfactorBootCampMetric(rosetta.core.simple_metrics.PerResidueRealMetric):
     _clones = list()
-    def __init__(self, atom_type = None):
-        super().__init__()
-        self._atom_type = atom_type
+    def __init__(self, atom_type: str = "CA"):
+        rosetta.core.simple_metrics.PerResidueRealMetric.__init__(self)
+        self.atom_type_: str = atom_type
+    def name(self) -> str:
+        return self.class_name()
         
         
     @staticmethod
     def class_name() -> str:
         return "PerResidueBfactorBootCampMetric"
-    
-    def name(self) -> str:
-        pass
     
     def clone(self):
         copy = PerResidueBfactorBootCampMetric()
@@ -25,7 +24,7 @@ class PerResidueBfactorBootCampMetric(rosetta.core.simple_metrics.PerResidueReal
     
     def parse_my_tag(self, tag, datamap):
         if tag.hasOption("atom_type"):
-            self._atom_type = tag.get_option_string("atom_type", 1)
+            self._atom_type = tag.get_option_string("atom_type", "CA")
     
     def metric(self):
         return "bfactor"

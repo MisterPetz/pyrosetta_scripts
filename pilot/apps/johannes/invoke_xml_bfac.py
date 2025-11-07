@@ -5,18 +5,19 @@ from pyrosetta.rosetta.protocols.rosetta_scripts import XmlObjects
 import register_metric
 
 
+# Embedded RosettaScripts XML:
 EMBEDDED_XML = """<ROSETTASCRIPTS>
   <SCOREFXNS>
     <ScoreFunction name="sfxn" weights="ref2015"/>
   </SCOREFXNS>
   <SIMPLE_METRICS>
-		<PerResidueBfactorBootCampMetric name="bfactor" atom_type="CA" />
-	</SIMPLE_METRICS>
+    <PerResidueBfactorBootCampMetric name="bfactor" atom_type="CA"/>
+  </SIMPLE_METRICS>
   <MOVERS>
     <RunSimpleMetrics name="metrics" metrics="bfactor"/>
   </MOVERS>
   <PROTOCOLS>
-    <Add mover_name="metrics"/>
+    <Add mover="metrics"/>
   </PROTOCOLS>
 </ROSETTASCRIPTS>
 """

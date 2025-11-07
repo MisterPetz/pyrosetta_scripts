@@ -3,19 +3,19 @@ from Per_Residue_Bfactor_Metric import PerResidueBfactorBootCampMetric
 
 _py_mover_creators_ = []
 class PerResidueBfactorBootCampMetricCreator(rosetta.core.simple_metrics.SimpleMetricCreator):
-    _isntances = []
+    _instances = []
     def __init__(self):
         rosetta.core.simple_metrics.SimpleMetricCreator.__init__(self)
         
     def create_simple_metric(self):
         metric = PerResidueBfactorBootCampMetric()
-        self.instances_.append(metric)
+        self._instances.append(metric)
         return metric
     
     def keyname(self):
         return PerResidueBfactorBootCampMetric.class_name()
     
-    def provdie_xml_schema(self, xsd):
+    def provide_xml_schema(self, xsd):
         PerResidueBfactorBootCampMetric.provide_xml_schema(xsd)
     
 
