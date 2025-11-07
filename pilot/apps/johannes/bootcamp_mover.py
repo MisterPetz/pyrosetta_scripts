@@ -2,14 +2,14 @@ from pyrosetta import *
 from pyrosetta.rosetta.numeric import random
 from pyrosetta.rosetta.protocols import moves
 from pyrosetta.rosetta import core
-from bootcamp_protocol import fold_tree_from_ss
+from bootcamp_protocol import FoldTreeFromSS
 from pyrosetta.rosetta.core.scoring import parse_score_function
 from pyrosetta.rosetta.core.scoring import get_score_function
 
 
 # XSD stuff
 from pyrosetta.rosetta.utility.tag import XMLSchemaType  
-from pyrosetta.rosetta.protocols import moves
+from pyrosetta.rosetta.protocols import moves, loops
 from pyrosetta.rosetta.core.scoring import (
     attributes_for_parse_score_function_w_description
 )
@@ -57,13 +57,17 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
         return BootCampMover()
         
     def apply(self, pose):
+        the_observer = moves.AddPyMOLObserver(pose)
+        the_observer.pymol().apply(pose)
 
         sfxn = self._sfxn
         # are these still needed?
         sfxn.set_weight(core.scoring.linear_chainbreak,1.0)
         #instantiate fold tree
+
+        data = FoldTreeFromSS(pose).build()
+        fold_tree = data.ft
         
-        #fold_tree = fold_tree_from_ss(pose) # inmpelment the new fold tree, 
         
         assert fold_tree.check_fold_tree(), "FoldTree is invalid"
 
@@ -102,6 +106,12 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
             orig_psi = pose.psi(rand_residue)
             pose.set_phi(rand_residue, orig_phi + phi_pert)
             pose.set_psi(rand_residue, orig_psi + psi_pert)
+            idx = data.loop_for_residue[rand_residue]
+            if idx > 0:
+                ranloop = data.loops[idx]
+                print(f"Closing loop: start={ranloop.start()} stop={ranloop.stop()} cut={ranloop.cut()}")
+                ccd = loops.loop_closure.ccd.CCDLoopClosureMover(ranloop, movemap)
+                ccd.apply(pose)
             
             #add packing and minimization calls to 
             tf = core.pack.task.TaskFactory()

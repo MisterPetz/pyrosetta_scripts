@@ -10,7 +10,7 @@ EMBEDDED_XML = """<ROSETTASCRIPTS>
     <ScoreFunction name="sfxn" weights="ref2015"/>
   </SCOREFXNS>
   <MOVERS>
-    <BootCampMover name="bm" num_iterations="3" scorefxn="sfxn"/>
+    <BootCampMover name="bm" num_iterations="20" scorefxn="sfxn"/>
   </MOVERS>
   <PROTOCOLS>
     <Add mover_name="bm"/>
