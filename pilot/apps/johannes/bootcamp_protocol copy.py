@@ -22,6 +22,7 @@ class FoldTreeFromSS:
         self._loop_left = loop_left
         self._loop_right = loop_right
         self._ft = self.fold_tree()
+        self.loops = None
         
     def build(self) -> _Built:
         """Construct and return the FoldTree, loops, and loop mapping."""
@@ -29,7 +30,6 @@ class FoldTreeFromSS:
         loops = self.loops()
         loop_for_residue = [self.loop_for_residue(i) for i in range(1, self.pose.total_residue() + 1)]
         return _Built(ft=ft, loops=loops, loop_for_residue=loop_for_residue)
-        
         
     def fold_tree(self) -> FoldTree:
         dssp = Dssp(self._pose)
@@ -112,23 +112,39 @@ class FoldTreeFromSS:
                 jump_i += 1
 
             ft.add_edge(start, end, label)
-
+        
         return ft
 
     def loop(self, index: int) -> Loop:
-        pass
-
+        a,b,c = self.loops[index]
+        return Loop(a,b,c)
 
     def loop_for_residue(self, seqpos: int) -> int: #gives an entry to the index for the array above start, end, cutpoint (so the loop defines the to be closed cutpoint for the resiude provieded by this funciton)
-        cuts = list(self._ft.cutpoints())# defines with its length the amount of loops there are
-        # create a loop list
-        print(cuts)
+        cuts = list(self._ft.cutpoints()) # defines with its length the amount of loops there are
         
+        # create a loop list # cut edges are not allowed to overlap another cut
+        
+        loops = []
+        for idx, cut in enumerate(cuts):
+            lower_bound = cut - self._loop_left
+            upper_bound = cut + self._loop_right
 
+            # Only check the next cut if it exists
+            if idx + 1 < len(cuts) and upper_bound >= cuts[idx + 1]:
+                upper_bound = cuts[idx] - 1
+
+            loops.append((lower_bound, upper_bound, cut))
+            
+        
+        self.loops = loops
+                
+        
         peptide_out = [e for e in self._ft.get_outgoing_edges(seqpos) if e.is_peptide()]
+        
         if not self._ft.is_root(seqpos) and len(peptide_out) == 0:
             e = self._ft.get_residue_edge(seqpos)
             start, stop = e.start(), e.stop()
+            
         elif len(peptide_out) > 1:
             start, stop, = peptide_out[1].start(), peptide_out[1].stop()
         else:
@@ -136,8 +152,14 @@ class FoldTreeFromSS:
         if stop == self._pose.total_residue() or stop == 1:
             return 0
         else:
-            
-            return None
+            closest_index = min(
+            range(len(loops)), 
+            key=lambda i: abs(loops[i][2] - stop) # stop used here as target to the closest cutpoint of loops 
+        )
+
+            # Convert to 1-based index
+            one_based_index = closest_index + 1
+            return one_based_index
 
         
     def _identify_secondary_structure_spans(self, input_string: str) -> list:
@@ -170,4 +192,6 @@ init(extra_options="-ignore_unrecognized_res")
 mypose = pose_from_pdb("1UBQ.pdb")
 
 a = FoldTreeFromSS(pose=mypose)
-print(a.loop_for_residue(8))
+
+loop = a.loop(a.loop_for_residue(8))
+print(loop)
