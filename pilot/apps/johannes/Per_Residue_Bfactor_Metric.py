@@ -6,7 +6,7 @@ from pyrosetta.rosetta.std import map_unsigned_long_double
 class PerResidueBfactorBootCampMetric(rosetta.core.simple_metrics.PerResidueRealMetric):
     _clones = list()
     def __init__(self, atom_type: str = "CA"):
-        rosetta.core.simple_metrics.PerResidueRealMetric.__init__(self)
+        super().__init__()
         self.atom_type_: str = atom_type
     def name(self) -> str:
         return self.class_name()

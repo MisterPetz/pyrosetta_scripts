@@ -41,4 +41,4 @@ protocol = xmlobj.get_mover("ParsedProtocol")
 protocol.apply(pose)
 
 
-print("BootCampMoverPy applied successfully!")
+print("SimpleMetrics applied successfully!")
