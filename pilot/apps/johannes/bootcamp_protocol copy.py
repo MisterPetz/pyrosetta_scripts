@@ -118,39 +118,27 @@ class FoldTreeFromSS:
     def loop(self, index: int) -> Loop:
         pass
 
-    # If you want all loops at once:
-    def loops(self):
-        return [self.loop(i) for i in range(len(list(self._ft.cutpoints())))]
 
     def loop_for_residue(self, seqpos: int) -> int: #gives an entry to the index for the array above start, end, cutpoint (so the loop defines the to be closed cutpoint for the resiude provieded by this funciton)
-        #print(f"start {self._ft.get_residue_edge(seqpos).start()}")
-        #print(f"stop {self._ft.get_residue_edge(seqpos).stop()}")
-        #print(self._ft.get_residue_edge(seqpos).label())
-        #print(list(self._ft.cutpoints()))
-        #print(self._ft)
-        #cuts = self._ft.cutpoints()
-        #start = self._ft.get_residue_edge(seqpos).start()
-        #stop = self._ft.get_residue_edge(seqpos).stop()
+        cuts = list(self._ft.cutpoints())# defines with its length the amount of loops there are
+        # create a loop list
+        print(cuts)
+        
+
         peptide_out = [e for e in self._ft.get_outgoing_edges(seqpos) if e.is_peptide()]
-        # edges implemented
-        if len(peptide_out) > 1:
+        if not self._ft.is_root(seqpos) and len(peptide_out) == 0:
+            e = self._ft.get_residue_edge(seqpos)
+            start, stop = e.start(), e.stop()
+        elif len(peptide_out) > 1:
             start, stop, = peptide_out[1].start(), peptide_out[1].stop()
         else:
             start, stop, = peptide_out[0].start(), peptide_out[0].stop()
         if stop == self._pose.total_residue() or stop == 1:
             return 0
+        else:
+            
+            return None
 
-        
-        # Each 'e' has e.start(), e.stop(), e.label()
-
-
-        #if seqpos <
-        #we need to define the loop idnex here and pass the loop index to the loop function
-        
-        #self.loop(2)
-        # so for a given residue we get start edge, end edge and only use it in peptide edges. 
-        #so we get start, stop, type ex residue 2 is between start 4 into direction 1 of the peptide edge (label)
-        #assert False, "TODO"
         
     def _identify_secondary_structure_spans(self, input_string: str) -> list:
         result: list = []
@@ -182,4 +170,4 @@ init(extra_options="-ignore_unrecognized_res")
 mypose = pose_from_pdb("1UBQ.pdb")
 
 a = FoldTreeFromSS(pose=mypose)
-print(a.loop_for_residue(3))
+print(a.loop_for_residue(8))
