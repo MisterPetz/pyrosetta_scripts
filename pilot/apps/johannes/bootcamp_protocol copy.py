@@ -6,9 +6,6 @@ from pyrosetta.rosetta.core.pose import Pose
 from dataclasses import dataclass
 from typing import List
 
-def _span(edge):
-    a, b = edge.start(), edge.stop()
-    return (min(a, b), max(a, b))
 @dataclass
 class _Built:
     ft: FoldTree
@@ -21,17 +18,20 @@ class FoldTreeFromSS:
         self._pose = pose
         self._loop_left = loop_left
         self._loop_right = loop_right
-        self._ft = self.fold_tree()
-        self.loops = None
+        self._loops = None
+        self._ft = self._fold_tree()
         
+        
+
     def build(self) -> _Built:
         """Construct and return the FoldTree, loops, and loop mapping."""
-        ft = self.fold_tree()
-        loops = self.loops()
-        loop_for_residue = [self.loop_for_residue(i) for i in range(1, self.pose.total_residue() + 1)]
-        return _Built(ft=ft, loops=loops, loop_for_residue=loop_for_residue)
         
-    def fold_tree(self) -> FoldTree:
+        loop_for_residue = [self._loop_for_residue(i) for i in range(1, self._pose.total_residue()+1)] #1 indexed?
+        loops = [self._loop(e - 1) for e in loop_for_residue]
+        
+        return _Built(ft=self._ft, loops=loops, loop_for_residue=loop_for_residue)
+        
+    def _fold_tree(self) -> FoldTree:
         dssp = Dssp(self._pose)
         secstruct = dssp.get_dssp_secstruct()
         ft = self._fold_tree_from_dssp_string(secstruct)
@@ -112,15 +112,14 @@ class FoldTreeFromSS:
                 jump_i += 1
 
             ft.add_edge(start, end, label)
+            
+        self._init_loops(ft)
         
         return ft
-
-    def loop(self, index: int) -> Loop:
-        a,b,c = self.loops[index]
-        return Loop(a,b,c)
-
-    def loop_for_residue(self, seqpos: int) -> int: #gives an entry to the index for the array above start, end, cutpoint (so the loop defines the to be closed cutpoint for the resiude provieded by this funciton)
-        cuts = list(self._ft.cutpoints()) # defines with its length the amount of loops there are
+    
+    def _init_loops(self, ft):
+        
+        cuts = list(ft.cutpoints()) # defines with its length the amount of loops there are
         
         # create a loop list # cut edges are not allowed to overlap another cut
         
@@ -134,10 +133,15 @@ class FoldTreeFromSS:
                 upper_bound = cuts[idx] - 1
 
             loops.append((lower_bound, upper_bound, cut))
-            
+        self._loops = loops
         
-        self.loops = loops
-                
+    
+
+    def _loop(self, index: int) -> Loop:
+        a,b,c = self._loops[index]
+        return Loop(a,b,c)
+
+    def _loop_for_residue(self, seqpos: int) -> int: #gives an entry to the index for the array above start, end, cutpoint (so the loop defines the to be closed cutpoint for the resiude provieded by this funciton)
         
         peptide_out = [e for e in self._ft.get_outgoing_edges(seqpos) if e.is_peptide()]
         
@@ -153,8 +157,8 @@ class FoldTreeFromSS:
             return 0
         else:
             closest_index = min(
-            range(len(loops)), 
-            key=lambda i: abs(loops[i][2] - stop) # stop used here as target to the closest cutpoint of loops 
+            range(len(self._loops)), 
+            key=lambda i: abs(self._loops[i][2] - stop) # stop used here as target to the closest cutpoint of loops 
         )
 
             # Convert to 1-based index
@@ -188,10 +192,15 @@ class FoldTreeFromSS:
             sec_segments_middles.append(mid)
         return sec_segments_middles
 
-init(extra_options="-ignore_unrecognized_res")
-mypose = pose_from_pdb("1UBQ.pdb")
+if __name__ == "__main__":
+    init(extra_options="-ignore_unrecognized_res")
 
-a = FoldTreeFromSS(pose=mypose)
+    file = "1UBQ.pdb"
+    mypose = pose_from_pdb(file)
+    data = FoldTreeFromSS(mypose).build()
+    idx = data.loop_for_residue[4]
+    if idx > 0:
+        ranloop = data.loops[idx]
+        print(f"Closing loop: start={ranloop.start()} stop={ranloop.stop()} cut={ranloop.cut()}")
+    
 
-loop = a.loop(a.loop_for_residue(8))
-print(loop)

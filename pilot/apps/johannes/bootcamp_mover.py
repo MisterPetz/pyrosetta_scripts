@@ -62,7 +62,9 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
         # are these still needed?
         sfxn.set_weight(core.scoring.linear_chainbreak,1.0)
         #instantiate fold tree
-        fold_tree = fold_tree_from_ss(pose)
+        
+        #fold_tree = fold_tree_from_ss(pose) # inmpelment the new fold tree, 
+        
         assert fold_tree.check_fold_tree(), "FoldTree is invalid"
 
         pose.fold_tree(fold_tree)
@@ -132,7 +134,7 @@ class BootCampMover(pyrosetta.rosetta.protocols.moves.Mover):
         attrs.append(
             XMLSchemaAttribute.attribute_w_default(
                 "num_iterations",
-                XMLSchemaType(XMLSchemaCommonType.xsct_positive_integer),  # wrap it!
+                XMLSchemaType(XMLSchemaCommonType.xsct_positive_integer), 
                 "How many sampling iterations this mover will perform.",
                 "10",
             )
