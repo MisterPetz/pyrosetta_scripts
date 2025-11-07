@@ -1,0 +1,185 @@
+from pyrosetta import *
+from pyrosetta.rosetta.core.kinematics import FoldTree
+from pyrosetta.rosetta.protocols.loops import Loop
+from pyrosetta.rosetta.core.scoring.dssp import Dssp
+from pyrosetta.rosetta.core.pose import Pose
+from dataclasses import dataclass
+from typing import List
+
+def _span(edge):
+    a, b = edge.start(), edge.stop()
+    return (min(a, b), max(a, b))
+@dataclass
+class _Built:
+    ft: FoldTree
+    loops: List[Loop]
+    loop_for_residue: List[int]  # 1..N, values in 0..len(loops)
+
+class FoldTreeFromSS:
+    def __init__(self, pose: Pose, loop_left: int = 2, loop_right: int = 3): # so loop left and right are just edges for the loop itself. 
+        
+        self._pose = pose
+        self._loop_left = loop_left
+        self._loop_right = loop_right
+        self._ft = self.fold_tree()
+        
+    def build(self) -> _Built:
+        """Construct and return the FoldTree, loops, and loop mapping."""
+        ft = self.fold_tree()
+        loops = self.loops()
+        loop_for_residue = [self.loop_for_residue(i) for i in range(1, self.pose.total_residue() + 1)]
+        return _Built(ft=ft, loops=loops, loop_for_residue=loop_for_residue)
+        
+        
+    def fold_tree(self) -> FoldTree:
+        dssp = Dssp(self._pose)
+        secstruct = dssp.get_dssp_secstruct()
+        ft = self._fold_tree_from_dssp_string(secstruct)
+        return ft
+        
+    def _fold_tree_from_dssp_string(self, ss) -> FoldTree:
+        ft = FoldTree()
+        segments = self._identify_secondary_structure_spans(ss)
+        if not segments:
+            return ft
+
+        # compute loop spans between adjacent segments
+        loop_spans = []
+        for (l0, r0), (l1, r1) in zip(segments, segments[1:]):
+            loop_start = r0 + 1
+            loop_end = l1 - 1
+            if loop_start <= loop_end:
+                loop_spans.append((loop_start, loop_end))
+
+        # After the last range
+        end = segments[-1][1]
+
+        sec_middles = self._get_middles(segments)
+        loop_middles = self._get_middles(loop_spans)
+
+        # jump edges
+        root = sec_middles[0]
+        jump_targets = [mid for mid in sec_middles[1:]] + [mid for mid in loop_middles]
+        jump_targets_sorted = sorted(jump_targets, key=lambda x: abs(x - root))
+        jump_edges = [(root, mid, i) for i, mid in enumerate(jump_targets_sorted, start=1)]
+
+
+        segment_edges = []
+        loop_edges = []
+
+        # upper loop: segments
+        for i, ((start, end), middle) in enumerate(zip(segments, sec_middles)):
+            left = 1 if i == 0 else start
+            right = len(ss) if i == len(segments) - 1 else end
+
+            segment_edges.append((middle, left, -1))
+            segment_edges.append((middle, right, -1))
+
+        # lower loop: loops
+        for (start, end), middle in zip(loop_spans, loop_middles):
+            loop_edges.append((middle, start, -1))
+            loop_edges.append((middle, end, -1))
+
+        # combine alternating two by two
+        combined_edges = []
+        seg_i = loop_i = 0
+
+        while seg_i < len(segment_edges) or loop_i < len(loop_edges):
+            # take two from segment_edges
+            for _ in range(2):
+                if seg_i < len(segment_edges):
+                    combined_edges.append(segment_edges[seg_i])
+                    seg_i += 1
+            # take two from loop_edges
+            for _ in range(2):
+                if loop_i < len(loop_edges):
+                    combined_edges.append(loop_edges[loop_i])
+                    loop_i += 1
+
+        all_edges = jump_edges + combined_edges
+        all_edges.sort(key=lambda x: (x[0], x[1], x[2]))
+
+        normal_i = jump_i = 0
+        for i in range(len(all_edges)):
+            # Pattern repeats every 3 edges: [normal, normal, jump]
+            pattern_pos = i % 3
+
+            if pattern_pos in (0, 1):  # two normal edges
+                start, end, label = combined_edges[normal_i]
+                normal_i += 1
+            else:  # one jump edge
+                start, end, label = jump_edges[jump_i]
+                jump_i += 1
+
+            ft.add_edge(start, end, label)
+
+        return ft
+
+    def loop(self, index: int) -> Loop:
+        pass
+
+    # If you want all loops at once:
+    def loops(self):
+        return [self.loop(i) for i in range(len(list(self._ft.cutpoints())))]
+
+    def loop_for_residue(self, seqpos: int) -> int: #gives an entry to the index for the array above start, end, cutpoint (so the loop defines the to be closed cutpoint for the resiude provieded by this funciton)
+        #print(f"start {self._ft.get_residue_edge(seqpos).start()}")
+        #print(f"stop {self._ft.get_residue_edge(seqpos).stop()}")
+        #print(self._ft.get_residue_edge(seqpos).label())
+        #print(list(self._ft.cutpoints()))
+        #print(self._ft)
+        #cuts = self._ft.cutpoints()
+        #start = self._ft.get_residue_edge(seqpos).start()
+        #stop = self._ft.get_residue_edge(seqpos).stop()
+        peptide_out = [e for e in self._ft.get_outgoing_edges(seqpos) if e.is_peptide()]
+        # edges implemented
+        if len(peptide_out) > 1:
+            start, stop, = peptide_out[1].start(), peptide_out[1].stop()
+        else:
+            start, stop, = peptide_out[0].start(), peptide_out[0].stop()
+        if stop == self._pose.total_residue() or stop == 1:
+            return 0
+
+        
+        # Each 'e' has e.start(), e.stop(), e.label()
+
+
+        #if seqpos <
+        #we need to define the loop idnex here and pass the loop index to the loop function
+        
+        #self.loop(2)
+        # so for a given residue we get start edge, end edge and only use it in peptide edges. 
+        #so we get start, stop, type ex residue 2 is between start 4 into direction 1 of the peptide edge (label)
+        #assert False, "TODO"
+        
+    def _identify_secondary_structure_spans(self, input_string: str) -> list:
+        result: list = []
+        i = 0
+        n = len(input_string)
+
+        while i < n:
+            ch = input_string[i]
+            if ch in ('H', 'E'):
+                start = i + 1
+                i += 1
+                while i < n and input_string[i] in ('H', 'E'):
+                    i += 1
+                result.append((start, i))
+            else:
+                i += 1
+
+        return result
+    
+    def _get_middles(self, elements_list):
+        sec_segments_middles = [] #describes every other secondary structure mid point, still  need the loop mid point
+        for seg in elements_list: # get middle of first secondary structure
+            a,b = seg
+            mid = (a + b)//2
+            sec_segments_middles.append(mid)
+        return sec_segments_middles
+
+init(extra_options="-ignore_unrecognized_res")
+mypose = pose_from_pdb("1UBQ.pdb")
+
+a = FoldTreeFromSS(pose=mypose)
+print(a.loop_for_residue(3))

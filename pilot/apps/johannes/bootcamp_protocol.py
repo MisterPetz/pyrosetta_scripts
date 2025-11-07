@@ -1,7 +1,6 @@
 from pyrosetta import *
 from pyrosetta.rosetta.core.kinematics import FoldTree
 from pyrosetta.rosetta.core.scoring.dssp import Dssp
-
 import argparse
 
 def fold_tree_from_ss(pose) -> FoldTree:
@@ -19,13 +18,21 @@ def get_middles(elements_list):
     return sec_segments_middles
 
 
-def fold_tree_from_dssp_string(ss):
+def fold_tree_from_dssp_string(ss) -> FoldTree:
+    """_summary_
+
+    Args:
+        ss (str): DSSP string
+
+    Returns:
+        FoldTree: FoldTree connects each secodary structure element, cuts at edges of ss.
+    """
     ft = FoldTree()
     segments = identify_secondary_structure_spans(ss)
     if not segments:
         return ft
 
-    # ----- compute loop spans between adjacent segments -----
+    # compute loop spans between adjacent segments
     loop_spans = []
     for (l0, r0), (l1, r1) in zip(segments, segments[1:]):
         loop_start = r0 + 1
@@ -49,7 +56,7 @@ def fold_tree_from_dssp_string(ss):
     segment_edges = []
     loop_edges = []
 
-    # --- upper loop: segments ---
+    # upper loop: segments
     for i, ((start, end), middle) in enumerate(zip(segments, sec_middles)):
         left = 1 if i == 0 else start
         right = len(ss) if i == len(segments) - 1 else end
@@ -57,12 +64,12 @@ def fold_tree_from_dssp_string(ss):
         segment_edges.append((middle, left, -1))
         segment_edges.append((middle, right, -1))
 
-    # --- lower loop: loops ---
+    # lower loop: loops
     for (start, end), middle in zip(loop_spans, loop_middles):
         loop_edges.append((middle, start, -1))
         loop_edges.append((middle, end, -1))
 
-    # --- combine alternating two by two ---
+    # combine alternating two by two
     combined_edges = []
     seg_i = loop_i = 0
 
